@@ -28,23 +28,26 @@ async function main() {
   // Your reproduction
   ///////////////////////////////////////////////////////////////
 
-  await Person.query().insertGraph({
-    firstName: 'Jennifer',
-    lastName: 'Lawrence',
-
-    pets: [
-      {
-        name: 'Doggo',
-        species: 'dog'
-      }
-    ]
+  // setup: any entity
+  await Movie.query().insert({
+      id: 1,
+      name: 'Initial name'
   });
 
-  const jennifer = await Person.query()
-    .findOne({ firstName: 'Jennifer' })
-    .withGraphFetched('pets');
+  // reproduction: insert conflicting entity with "onConflict().ignore()"
+  const insertOrIgnore = await Movie.query().insert({
+      id: 1,
+      name: 'Another name'
+  })
+        .onConflict()
+        .ignore();
 
-  chai.expect(jennifer.pets[0].name).to.equal('Doggo');
+  const actual = await Movie.query().findOne({ id: 1 });
+
+  // matching Knex behaviour
+  chai.expect(insertOrIgnore).to.be.undefined;
+  // or alternatively also acceptable:
+  chai.expect(insertOrIgnore.name).to.equal(actual.name);
 }
 
 ///////////////////////////////////////////////////////////////
