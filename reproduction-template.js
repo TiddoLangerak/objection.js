@@ -40,14 +40,31 @@ async function main() {
       name: 'Another name'
   })
         .onConflict()
-        .ignore();
+        .ignore()
+        .returning('*');
 
   const actual = await Movie.query().findOne({ id: 1 });
 
-  // matching Knex behaviour
   chai.expect(insertOrIgnore).to.be.undefined;
-  // or alternatively also acceptable:
-  chai.expect(insertOrIgnore.name).to.equal(actual.name);
+
+  ///////////////////////////////////////////////////////////////
+  // Knex equivalent
+  ///////////////////////////////////////////////////////////////
+
+  const knexInserted = await knex('Movie')
+    .insert({ id: 2, name: 'Initial name' })
+    .returning('*');
+    // value returned on insert:
+  chai.expect(knexInserted).to.eql([{ id: 2, name: 'Initial name' }]);
+
+  const knexInsertOrIgnore = await knex('Movie')
+    .insert({ id: 2, name: 'Another name' })
+    .onConflict('id')
+    .ignore()
+    .returning('*');
+  // nothing returned on conflict:
+  chai.expect(knexInsertOrIgnore).to.eql([]);
+
 }
 
 ///////////////////////////////////////////////////////////////
